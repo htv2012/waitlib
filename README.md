@@ -1,2 +1,3 @@
-# uv-template
-A template for Python project which uses uv to manage
+# waitlib
+
+Waits for some event to happen.
