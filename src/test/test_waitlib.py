@@ -1,14 +1,13 @@
 import asyncio
 import logging
-from unittest.mock import Mock, call, patch
+from unittest.mock import AsyncMock, Mock, call, patch
 
 import pytest
 
 from waitlib import wait_for_async
 
-# Note: Adjust the import path above based on your actual file structure
+RESULT_SUCCESS = "success"
 
-# --- Test Helpers ---
 
 # A simple counter to track function calls
 call_count = 0
@@ -72,34 +71,19 @@ async def test_timeout_exceeded():
 @pytest.mark.asyncio
 async def test_func_raises_exception_and_retries():
     """Tests that the loop continues if the func raises an exception, and the predicate ignores it."""
-
-    class RetryableError(Exception):
-        pass
-
-    # Mock function that raises an error twice, then succeeds
-    mock_func = Mock(
-        side_effect=[
-            RetryableError("Attempt 1 failed"),
-            RetryableError("Attempt 2 failed"),
-            "Success!",
-        ]
+    mock_async_func = AsyncMock(
+        side_effect=[ValueError(), ValueError(), RESULT_SUCCESS]
     )
-
-    # Predicate that ignores the exception and only checks for a successful result
-    def success_predicate(result, exception) -> bool:
-        return exception is None and result == "Success!"
 
     result = await wait_for_async(
-        mock_func, success_predicate, timeout=1, interval=0.05
+        func=mock_async_func,
+        predicate=lambda res, exc: res == RESULT_SUCCESS and exc is None,
+        timeout=1,
+        interval=0.05,
     )
 
-    # Assertions
-    assert result == "Success!"
-    # Must be called 3 times (2 failures + 1 success)
-    assert mock_func.call_count == 3
-
-
-# ---
+    assert result == RESULT_SUCCESS
+    assert mock_async_func.call_count == 3
 
 
 @pytest.mark.asyncio
@@ -160,19 +144,20 @@ async def test_logging(caplog):
     assert len(success_logs) == 1
 
 
-@patch("asyncio.sleep", new=Mock(wraps=asyncio.sleep))
 @pytest.mark.asyncio
-async def test_correct_interval_sleep(mock_sleep):
+async def test_correct_interval_sleep():
     """Tests that asyncio.sleep is called with the specified interval."""
-    global call_count
-    call_count = 0
-
-    await wait_for_async(
-        lambda: async_counter_func(2),
-        is_greater_than(2),
-        timeout=5,
-        interval=0.25,  # Test interval is 0.25s
+    mock_async_func = AsyncMock(
+        side_effect=[ValueError(), ValueError(), RESULT_SUCCESS]
     )
+
+    with patch("asyncio.sleep") as mock_sleep:
+        await wait_for_async(
+            func=mock_async_func,
+            predicate=lambda res, exc: res == RESULT_SUCCESS and exc is None,
+            timeout=5,
+            interval=0.25,
+        )
 
     # The function must have run 3 times, meaning it slept 2 times
     assert mock_sleep.call_count == 2

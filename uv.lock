@@ -1312,7 +1312,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/ad/70/be318554495555eba
 
 [[package]]
 name = "waitlib"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
