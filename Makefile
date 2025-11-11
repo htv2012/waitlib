@@ -6,11 +6,10 @@
 	lint \
 	py \
 	rename \
-	run \
 	test \
 
 ### Default target(s)
-all: test run
+all: test
 
 ### Clean up generated files
 clean:
@@ -38,11 +37,6 @@ py:
 ### Rename the project
 rename:
 	uv run etc/set_project_name.py
-
-### Run the project
-run: lint
-	PYTHONBREAKPOINT="pudb.set_trace" uv run waitlib
-	PYTHONBREAKPOINT="pudb.set_trace" uv run waitlib --version
 
 ### Run unit tests
 test: lint
